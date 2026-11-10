@@ -47,6 +47,13 @@ cd G:\vm\programa
 ```
 Requisitos: .NET SDK 8+, QEMU em `C:\Program Files\qemu\`.
 
+Linux:
+```bash
+bash programa/qemu-manager-linux.sh --self-test
+bash programa/qemu-manager-linux.sh --check
+bash programa/qemu-manager-linux.sh
+```
+
 ## 6. Mapa rápido
 - `programa/` — código C# (`QemuManager.cs`, `AppIcons.cs`), Python de referência e `qemu-manager-linux.sh`
 - `programa/Resources/` — ícones embutidos (app.ico + PNGs)

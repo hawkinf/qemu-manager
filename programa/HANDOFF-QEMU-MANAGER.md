@@ -81,7 +81,6 @@ Campos principais:
 ## Pendências / Melhorias possíveis
 
 1. TPM no Windows exige `swtpm` (socket Unix); tratar backend nativo se alguém precisar
-2. Validar `qemu-manager-linux.sh` num host Linux
 
 ---
 

@@ -13,7 +13,7 @@ Aplicativo Windows para criar, configurar e iniciar VMs QEMU. A GUI C# (WinForms
 - `programa/Resources/` — `app.ico`, `app.png`, `{nome}.png` 32px e `{nome}-16.png`
 - `programa/compilar-qemu-manager.ps1` — publish single-file
 - `programa/qemu-manager-definitivo.py` — GUI Python de referência
-- `programa/qemu-manager-linux.sh` — menu interativo no terminal Linux
+- `programa/qemu-manager-linux.sh` — menu Linux (listar/iniciar/criar/editar/excluir/snapshots); `--self-test`, `--print-args`, `--check`. Args montados em Python (mesmo JSON da GUI). Aceleração: KVM ou TCG.
 - `programa/HANDOFF-QEMU-MANAGER.md` — notas originais; o estado vivo é `docs/STATUS.md`
 - `docs/` — STATUS e ARCHITECTURE (handoff entre IAs)
 
