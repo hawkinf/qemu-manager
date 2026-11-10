@@ -42,6 +42,10 @@ public class Config
     public string Keyboard { get; set; } = "en-us";
     public string NetMode { get; set; } = "user";
     public string HostFwd { get; set; } = "";
+    public string TapIf { get; set; } = "";
+    public string Mac { get; set; } = "";
+    public string Tftp { get; set; } = "";
+    public string BootFile { get; set; } = "";
     public string Extra { get; set; } = "";
 
     public static Config FromJson(string json)
@@ -86,6 +90,10 @@ public class Config
             Keyboard = Str(r, "Keyboard", "en-us"),
             NetMode = Str(r, "NetMode", "user"),
             HostFwd = Str(r, "HostFwd"),
+            TapIf = Str(r, "TapIf"),
+            Mac = Str(r, "Mac"),
+            Tftp = Str(r, "Tftp"),
+            BootFile = Str(r, "BootFile"),
             Extra = Str(r, "Extra")
         };
     }
@@ -201,13 +209,20 @@ public partial class Form1 : Form
         ["RISC-V 64"] = new() { Arch = "riscv64", Disk = "riscv.qcow2", Size = "20G", Ram = "2G", Cpus = "2", CpuModel = "rv64", Machine = "virt", DiskIf = "virtio", Nic = "virtio-net-pci", Vga = "virtio", Usb = true },
         ["Alpine / Mínimo"] = new() { Arch = "x86_64 (64-bit)", Disk = "alpine.qcow2", Size = "10G", Ram = "1G", Cpus = "1", CpuModel = "host", Machine = "q35", DiskIf = "virtio", Nic = "virtio-net-pci", Vga = "virtio", Usb = true },
         ["Windows 98 / DOS"] = new() { Arch = "i386 (32-bit)", Disk = "win98.qcow2", Size = "8G", Ram = "512M", Cpus = "1", CpuModel = "qemu32", Machine = "pc", DiskIf = "ide", Nic = "rtl8139", Vga = "cirrus", Usb = false, Sound = "sb16", Rng = false },
-        ["macOS (OpenCore x64)"] = new() { Arch = "x86_64 (64-bit)", Disk = "macos.qcow2", Size = "80G", Ram = "8G", Cpus = "4", CpuModel = "Penryn", Machine = "q35", DiskIf = "virtio", Nic = "virtio-net-pci", Vga = "virtio", Usb = true, Rng = true, Extra = "-device isa-applesmc,osk=\"ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc\" -smbios type=2" }
+        ["macOS (OpenCore x64)"] = new() { Arch = "x86_64 (64-bit)", Disk = "macos.qcow2", Size = "80G", Ram = "8G", Cpus = "4", CpuModel = "Penryn", Machine = "q35", DiskIf = "virtio", Nic = "virtio-net-pci", Vga = "virtio", Usb = true, Rng = true, Extra = "-device isa-applesmc,osk=\"ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc\" -smbios type=2" },
+        ["Teste PXE (rede interna)"] = new()
+        {
+            Arch = "x86_64 (64-bit)", Disk = "pxe-test.qcow2", Size = "2G", Ram = "2G", Cpus = "2",
+            CpuModel = "qemu64", Machine = "q35", DiskIf = "none", Nic = "e1000",
+            Boot = "n", BootMenu = true, Vga = "std", Usb = true, Rng = false,
+            Virtio = "", Iso = "", NetMode = "tap", TapIf = "OpenVPN TAP-Windows6", Mac = "52:54:00:12:34:56"
+        }
     };
 
     private TabControl tabs = null!;
     private ListBox lstVms = null!;
     private ComboBox cboPreset = null!, cboArch = null!, cboRam = null!, cboCpuModel = null!, cboMachine = null!, cboDiskIf = null!, cboNic = null!, cboDisplay = null!, cboSound = null!, cboVga = null!, cboBoot = null!, cboExtraDiskIf = null!, cboKeyboard = null!, cboNetMode = null!;
-    private TextBox txtDisk = null!, txtSize = null!, txtIso = null!, txtVirtio = null!, txtExtra = null!, txtCustomQemu = null!, txtBootCustom = null!, txtBios = null!, txtPflash = null!, txtShareHost = null!, txtShareName = null!, txtExtraDisk = null!, txtSnapshot = null!, txtKernel = null!, txtInitrd = null!, txtAppend = null!, txtHostFwd = null!, txtLog = null!;
+    private TextBox txtDisk = null!, txtSize = null!, txtIso = null!, txtVirtio = null!, txtExtra = null!, txtCustomQemu = null!, txtBootCustom = null!, txtBios = null!, txtPflash = null!, txtShareHost = null!, txtShareName = null!, txtExtraDisk = null!, txtSnapshot = null!, txtKernel = null!, txtInitrd = null!, txtAppend = null!, txtHostFwd = null!, txtTapIf = null!, txtMac = null!, txtTftp = null!, txtBootFile = null!, txtLog = null!;
     private NumericUpDown numCpus = null!;
     private CheckBox chkGl = null!, chkUsb = null!, chkBootMenu = null!, chkRng = null!, chkBalloon = null!, chkTpm = null!;
     private Label lblStatus = null!;
@@ -498,13 +513,35 @@ public partial class Form1 : Form
         y += 36;
 
         AddLabel(p, "Modo rede:", labelX, y);
-        cboNetMode = CreateCombo(p, controlX, y - 2, 120, new[] { "user", "none" });
-        tip.SetToolTip(cboNetMode, "user = NAT com internet. none = sem rede.");
+        cboNetMode = CreateCombo(p, controlX, y - 2, 120, new[] { "user", "tap", "bridge", "none" });
+        tip.SetToolTip(cboNetMode, "user = NAT (não vê PXE da LAN). tap = TAP na rede interna. bridge = ponte Linux. none = sem rede.");
+        y += 36;
+
+        AddLabel(p, "TAP/bridge:", labelX, y);
+        txtTapIf = AddTextBox(p, controlX, y - 2, controlW);
+        txtTapIf.Text = "OpenVPN TAP-Windows6";
+        tip.SetToolTip(txtTapIf, "Windows: OpenVPN TAP-Windows6, em ponte com a placa da LAN (cabo) em ncpa.cpl.\nLinux tap: tap0  |  Linux bridge: br0");
+        y += 36;
+
+        AddLabel(p, "MAC:", labelX, y);
+        txtMac = AddTextBox(p, controlX, y - 2, 200);
+        tip.SetToolTip(txtMac, "MAC da NIC virtual. Ex: 52:54:00:12:34:56");
         y += 36;
 
         AddLabel(p, "Hostfwd:", labelX, y);
         txtHostFwd = AddTextBox(p, controlX, y - 2, controlW);
-        tip.SetToolTip(txtHostFwd, "Redirecionamento de portas. Ex: tcp::2222-:22 (SSH)\ntcp::3389-:3389 (RDP)");
+        tip.SetToolTip(txtHostFwd, "Só no modo user. Ex: tcp::2222-:22");
+        y += 36;
+
+        AddLabel(p, "TFTP local:", labelX, y);
+        txtTftp = AddTextBox(p, controlX, y - 2, controlW - 40);
+        tip.SetToolTip(txtTftp, "Pasta TFTP só no modo user (PXE emulado).");
+        AddBrowseButton(p, btnX, y - 3, () => BrowseFolder(txtTftp), "Pasta TFTP");
+        y += 36;
+
+        AddLabel(p, "Bootfile:", labelX, y);
+        txtBootFile = AddTextBox(p, controlX, y - 2, 280);
+        tip.SetToolTip(txtBootFile, "Arquivo PXE no TFTP local. Ex: pxelinux.0");
         y += 40;
 
         AddLabel(p, "Argumentos extras:", labelX, y);
@@ -670,6 +707,17 @@ public partial class Form1 : Form
         var json = JsonSerializer.Serialize(p);
         var cfg = Config.FromJson(json);
         ApplyConfig(cfg);
+        if (name.StartsWith("Teste PXE", StringComparison.OrdinalIgnoreCase))
+        {
+            MessageBox.Show(this,
+                "Este perfil usa TAP (não NAT) para alcançar o servidor PXE interno.\n\n" +
+                "Windows:\n" +
+                "1. Extra → TAP/bridge = OpenVPN TAP-Windows6\n" +
+                "2. Em ncpa.cpl, selecione o TAP e a placa da LAN (cabo) → Ponte de Rede\n" +
+                "3. Boot = Rede/PXE, NIC = e1000\n\n" +
+                "Linux: modo bridge e interface br0 (ou tap0).",
+                "PXE na LAN", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
     }
 
     private void RefreshVmList()
@@ -792,6 +840,10 @@ public partial class Form1 : Form
         SetCombo(cboKeyboard, c.Keyboard);
         SetCombo(cboNetMode, c.NetMode);
         txtHostFwd.Text = c.HostFwd;
+        txtTapIf.Text = c.TapIf;
+        txtMac.Text = c.Mac;
+        txtTftp.Text = c.Tftp;
+        txtBootFile.Text = c.BootFile;
         txtExtra.Text = c.Extra;
     }
 
@@ -833,6 +885,10 @@ public partial class Form1 : Form
         Keyboard = cboKeyboard.Text,
         NetMode = cboNetMode.Text,
         HostFwd = txtHostFwd.Text.Trim(),
+        TapIf = txtTapIf.Text.Trim(),
+        Mac = txtMac.Text.Trim(),
+        Tftp = txtTftp.Text.Trim(),
+        BootFile = txtBootFile.Text.Trim(),
         Extra = txtExtra.Text.Trim()
     };
 
@@ -1018,7 +1074,8 @@ public partial class Form1 : Form
         cfg.Kernel = string.IsNullOrWhiteSpace(cfg.Kernel) ? "" : Rooted(cfg.Kernel);
         cfg.Initrd = string.IsNullOrWhiteSpace(cfg.Initrd) ? "" : Rooted(cfg.Initrd);
 
-        if (string.IsNullOrWhiteSpace(cfg.Disk))
+        var needDisk = !string.Equals(cfg.DiskIf, "none", StringComparison.OrdinalIgnoreCase);
+        if (needDisk && string.IsNullOrWhiteSpace(cfg.Disk))
         {
             MessageBox.Show(this, "Informe o arquivo de disco na aba Principal.", "Disco obrigatório", MessageBoxButtons.OK, MessageBoxIcon.Error);
             tabs.SelectedIndex = 1;
@@ -1067,7 +1124,7 @@ public partial class Form1 : Form
             return;
         }
 
-        if (!File.Exists(cfg.Disk))
+        if (needDisk && !File.Exists(cfg.Disk))
         {
             var img = Path.Combine(QemuDir, "qemu-img.exe");
             if (!File.Exists(img))
@@ -1144,14 +1201,36 @@ public partial class Form1 : Form
                 args.AddRange(new[] { "-device", cfg.Sound });
         }
 
-        if (cfg.NetMode == "user" && cfg.Nic != "none")
+        var pxe = cfg.Boot is "n" or "once_n" or "nc" || (cfg.Boot == "custom" && cfg.BootCustom.StartsWith("n"));
+        var nicModel = string.IsNullOrWhiteSpace(cfg.Nic) || cfg.Nic == "none" ? "e1000" : cfg.Nic;
+        var macOpt = string.IsNullOrWhiteSpace(cfg.Mac) ? "" : $",mac={cfg.Mac}";
+        var bootIdx = pxe ? ",bootindex=1" : "";
+        if (cfg.Nic == "none" || cfg.NetMode == "none")
+            args.AddRange(new[] { "-nic", "none" });
+        else if (cfg.NetMode == "user")
         {
-            var nic = $"user,model={cfg.Nic}";
+            var nic = $"user,model={nicModel}{macOpt}";
             if (!string.IsNullOrWhiteSpace(cfg.HostFwd))
                 nic += $",hostfwd={cfg.HostFwd}";
-            if (cfg.Boot is "n" or "once_n" || (cfg.Boot == "custom" && cfg.BootCustom.StartsWith("n")))
-                nic += ",bootindex=1";
+            if (!string.IsNullOrWhiteSpace(cfg.Tftp))
+                nic += $",tftp={cfg.Tftp}";
+            if (!string.IsNullOrWhiteSpace(cfg.BootFile))
+                nic += $",bootfile={cfg.BootFile}";
+            if (pxe) nic += ",bootindex=1";
             args.AddRange(new[] { "-nic", nic });
+        }
+        else if (cfg.NetMode is "tap" or "bridge")
+        {
+            if (string.IsNullOrWhiteSpace(cfg.TapIf))
+            {
+                MessageBox.Show(this,
+                    "Informe a interface TAP/bridge na aba Extra.\nWindows: OpenVPN TAP-Windows6 em ponte com a placa da LAN (cabo).",
+                    "PXE / TAP", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            var ifn = cfg.TapIf.Contains(' ') && !cfg.TapIf.StartsWith('"') ? $"\"{cfg.TapIf}\"" : cfg.TapIf;
+            var nd = cfg.NetMode == "tap" ? $"tap,id=net0,ifname={ifn}" : $"bridge,id=net0,br={ifn}";
+            args.AddRange(new[] { "-netdev", nd, "-device", $"{nicModel},netdev=net0{macOpt}{bootIdx}" });
         }
         else
             args.AddRange(new[] { "-nic", "none" });

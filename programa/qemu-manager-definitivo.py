@@ -138,6 +138,13 @@ PRESETS = {
         "boot": "menu", "vga": "virtio", "usb": True, "rng": True,
         "extra": '-device isa-applesmc,osk="ourhardworkbythesewordsguardedpleasedontsteal(c)AppleComputerInc" -smbios type=2'
     },
+    "Teste PXE (rede interna)": {
+        "arch": "x86_64 (64-bit)", "disk": "pxe-test.qcow2", "size": "2G", "ram": "2G", "cpus": "2",
+        "cpu_model": "qemu64", "machine": "q35", "disk_if": "none", "nic": "e1000",
+        "boot": "n", "boot_menu": True, "vga": "std", "usb": True, "rng": False,
+        "virtio": "", "iso": "", "net_mode": "tap",
+        "tap_if": "OpenVPN TAP-Windows6", "mac": "52:54:00:12:34:56"
+    },
 }
 
 class QemuManager:
@@ -259,7 +266,7 @@ class QemuManager:
             "menu": "Mostra o menu interativo de boot do QEMU.",
             "d": "Boota preferencialmente do CD/ISO (order=d).",
             "c": "Boota preferencialmente do disco rígido (order=c).",
-            "n": "Tenta boot pela rede/PXE primeiro (order=n). Precisa de servidor DHCP/TFTP.",
+            "n": "Boot PXE (order=n). NAT (user) NÃO vê o PXE da LAN.\nUse o perfil 'Teste PXE (rede interna)' com modo tap.",
             "a": "Boota de disquete (order=a).",
             "dc": "Tenta CD e depois disco (order=dc).",
             "nc": "Tenta rede/PXE e depois disco (order=nc).",
@@ -459,14 +466,34 @@ class QemuManager:
         f_net.pack(fill="x", pady=3)
         ttk.Label(f_net, text="Modo:").grid(row=0, column=0, sticky="w")
         self.net_mode_var = tk.StringVar(value="user")
-        cb_net = ttk.Combobox(f_net, textvariable=self.net_mode_var, values=["user","none"], width=10)
+        cb_net = ttk.Combobox(f_net, textvariable=self.net_mode_var, values=["user", "tap", "bridge", "none"], width=10)
         cb_net.grid(row=0, column=1, sticky="w", padx=4)
-        ToolTip(cb_net, "user = NAT com acesso à internet. none = sem rede.")
-        ttk.Label(f_net, text="Hostfwd:").grid(row=1, column=0, sticky="w", pady=3)
+        ToolTip(cb_net, "user = NAT (não vê PXE da LAN).\ntap = adaptador TAP na rede interna (PXE real).\nbridge = ponte Linux (br0).\nnone = sem rede.")
+        ttk.Label(f_net, text="TAP/bridge:").grid(row=0, column=2, sticky="w", padx=8)
+        self.tap_if_var = tk.StringVar(value="OpenVPN TAP-Windows6")
+        e_tap = ttk.Entry(f_net, textvariable=self.tap_if_var, width=28)
+        e_tap.grid(row=0, column=3, sticky="w")
+        ToolTip(e_tap, "Windows: nome do TAP (ex: OpenVPN TAP-Windows6).\nFaça a PONTE do TAP com a placa da LAN (cabo) em ncpa.cpl.\nLinux tap: tap0  |  Linux bridge: br0")
+        ttk.Label(f_net, text="MAC:").grid(row=1, column=0, sticky="w", pady=3)
+        self.mac_var = tk.StringVar()
+        e_mac = ttk.Entry(f_net, textvariable=self.mac_var, width=20)
+        e_mac.grid(row=1, column=1, sticky="w", padx=4)
+        ToolTip(e_mac, "MAC da NIC virtual. Alguns PXE filtram por MAC.\nEx: 52:54:00:12:34:56")
+        ttk.Label(f_net, text="Hostfwd:").grid(row=2, column=0, sticky="w", pady=3)
         self.hostfwd_var = tk.StringVar()
         e_fwd = ttk.Entry(f_net, textvariable=self.hostfwd_var, width=50)
-        e_fwd.grid(row=1, column=1, columnspan=2, sticky="w", padx=4)
-        ToolTip(e_fwd, "Redirecionamento de portas. Ex: tcp::2222-:22 (SSH)\ntcp::3389-:3389 (RDP)")
+        e_fwd.grid(row=2, column=1, columnspan=3, sticky="w", padx=4)
+        ToolTip(e_fwd, "Só no modo user. Ex: tcp::2222-:22")
+        ttk.Label(f_net, text="TFTP local:").grid(row=3, column=0, sticky="w", pady=3)
+        self.tftp_var = tk.StringVar()
+        e_tftp = ttk.Entry(f_net, textvariable=self.tftp_var, width=40)
+        e_tftp.grid(row=3, column=1, columnspan=2, sticky="w", padx=4)
+        ToolTip(e_tftp, "Pasta TFTP só no modo user (PXE emulado, não é a LAN).")
+        ttk.Label(f_net, text="Bootfile:").grid(row=4, column=0, sticky="w")
+        self.bootfile_var = tk.StringVar()
+        e_bf = ttk.Entry(f_net, textvariable=self.bootfile_var, width=30)
+        e_bf.grid(row=4, column=1, sticky="w", padx=4)
+        ToolTip(e_bf, "Arquivo PXE no TFTP local. Ex: pxelinux.0, undionly.kpxe")
 
         f_extra = ttk.LabelFrame(tab_extra, text="Argumentos extras (qualquer coisa do QEMU)", padding=6)
         f_extra.pack(fill="x", pady=3)
@@ -576,7 +603,10 @@ class QemuManager:
             "initrd": self.initrd_var.get(), "append": self.append_var.get(),
             "rng": self.rng_var.get(), "balloon": self.balloon_var.get(), "tpm": self.tpm_var.get(),
             "keyboard": self.keyboard_var.get(), "net_mode": self.net_mode_var.get(),
-            "hostfwd": self.hostfwd_var.get(), "extra": self.extra_args.get("1.0", "end").strip()
+            "hostfwd": self.hostfwd_var.get(), "tap_if": self.tap_if_var.get(),
+            "mac": self.mac_var.get(), "tftp": self.tftp_var.get(),
+            "bootfile": self.bootfile_var.get(),
+            "extra": self.extra_args.get("1.0", "end").strip()
         }
 
     def apply_config(self, cfg):
@@ -617,6 +647,10 @@ class QemuManager:
         self.keyboard_var.set(cfg.get("keyboard", "en-us"))
         self.net_mode_var.set(cfg.get("net_mode", "user"))
         self.hostfwd_var.set(cfg.get("hostfwd", ""))
+        self.tap_if_var.set(cfg.get("tap_if", cfg.get("tapif", "")))
+        self.mac_var.set(cfg.get("mac", ""))
+        self.tftp_var.set(cfg.get("tftp", ""))
+        self.bootfile_var.set(cfg.get("bootfile", cfg.get("boot_file", "")))
         self.extra_args.delete("1.0", "end")
         self.extra_args.insert("1.0", cfg.get("extra", ""))
         self.on_arch_change()
@@ -624,8 +658,19 @@ class QemuManager:
     def load_preset(self, name):
         if name in PRESETS:
             p = PRESETS[name].copy()
-            p["disk"] = os.path.join(os.getcwd(), p["disk"])
+            if p.get("disk") and not os.path.isabs(p["disk"]):
+                p["disk"] = os.path.join(os.getcwd(), p["disk"])
             self.apply_config(p)
+            if name.startswith("Teste PXE"):
+                messagebox.showinfo(
+                    "PXE na LAN",
+                    "Este perfil usa TAP (não NAT) para alcançar o servidor PXE interno.\n\n"
+                    "Windows:\n"
+                    "1. Extra → TAP/bridge = OpenVPN TAP-Windows6\n"
+                    "2. Em ncpa.cpl, selecione o TAP e a placa da LAN (cabo) → Ponte de Rede\n"
+                    "3. Boot = Rede/PXE, NIC = e1000\n\n"
+                    "Linux: modo bridge e interface br0 (ou tap0)."
+                )
 
     def load_selected_preset(self):
         self.load_preset(self.preset_combo.get())
@@ -707,15 +752,17 @@ class QemuManager:
     def start_vm(self):
         cfg = self.get_current_config()
         disk = cfg["disk"]
-        if not disk:
-            messagebox.showerror("Erro", "Disco obrigatório")
-            return
-        if not os.path.exists(disk):
-            try:
-                subprocess.run([QEMU_IMG, "create", "-f", "qcow2", disk, cfg["size"] or "40G"], check=True, capture_output=True)
-            except Exception as e:
-                messagebox.showerror("Erro", str(e))
+        need_disk = (cfg.get("disk_if") or "virtio") != "none"
+        if need_disk:
+            if not disk:
+                messagebox.showerror("Erro", "Disco obrigatório")
                 return
+            if not os.path.exists(disk):
+                try:
+                    subprocess.run([QEMU_IMG, "create", "-f", "qcow2", disk, cfg["size"] or "40G"], check=True, capture_output=True)
+                except Exception as e:
+                    messagebox.showerror("Erro", str(e))
+                    return
 
         qemu = self.get_qemu_binary()
         if not os.path.exists(qemu):
@@ -731,7 +778,8 @@ class QemuManager:
             args += ["-machine", machine]
 
         args += ["-m", cfg["ram"], "-smp", cfg["cpus"], "-cpu", cfg["cpu_model"]]
-        args += ["-drive", f"file={disk},format=qcow2,if={cfg['disk_if']}"]
+        if need_disk:
+            args += ["-drive", f"file={disk},format=qcow2,if={cfg['disk_if']}"]
 
         if cfg["extra_disk"] and os.path.exists(cfg["extra_disk"]):
             args += ["-drive", f"file={cfg['extra_disk']},format=qcow2,if={cfg['extra_diskif']}"]
@@ -753,16 +801,49 @@ class QemuManager:
             else:
                 args += ["-device", cfg["sound"]]
 
-        pxe = cfg["boot"] in ("n", "once_n") or (
+        pxe = cfg["boot"] in ("n", "once_n", "nc") or (
             cfg["boot"] == "custom" and str(cfg.get("boot_custom", "")).startswith("n")
         )
-        if cfg["net_mode"] == "user" and cfg["nic"] != "none":
-            n = f"user,model={cfg['nic']}"
-            if cfg["hostfwd"]:
+        nic_model = cfg["nic"] if cfg["nic"] and cfg["nic"] != "none" else "e1000"
+        mac = (cfg.get("mac") or "").strip()
+        mac_opt = f",mac={mac}" if mac else ""
+        bootidx = ",bootindex=1" if pxe else ""
+        net_mode = cfg.get("net_mode") or "user"
+
+        if cfg["nic"] == "none" or net_mode == "none":
+            args += ["-nic", "none"]
+        elif net_mode == "user":
+            n = f"user,model={nic_model}{mac_opt}"
+            if cfg.get("hostfwd"):
                 n += f",hostfwd={cfg['hostfwd']}"
+            tftp = (cfg.get("tftp") or "").strip()
+            bootfile = (cfg.get("bootfile") or "").strip()
+            if tftp:
+                n += f",tftp={tftp}"
+            if bootfile:
+                n += f",bootfile={bootfile}"
             if pxe:
                 n += ",bootindex=1"
             args += ["-nic", n]
+        elif net_mode in ("tap", "bridge"):
+            ifname = (cfg.get("tap_if") or "").strip()
+            if not ifname:
+                messagebox.showerror(
+                    "PXE / TAP",
+                    "Informe a interface TAP/bridge na aba Extra.\n"
+                    "Windows: OpenVPN TAP-Windows6, em ponte com a placa da LAN (cabo).\n"
+                    "Linux: tap0 ou br0."
+                )
+                return
+            if " " in ifname and not ifname.startswith('"'):
+                ifname_q = f'"{ifname}"'
+            else:
+                ifname_q = ifname
+            if net_mode == "tap":
+                nd = f"tap,id=net0,ifname={ifname_q}"
+            else:
+                nd = f"bridge,id=net0,br={ifname_q}"
+            args += ["-netdev", nd, "-device", f"{nic_model},netdev=net0{mac_opt}{bootidx}"]
         else:
             args += ["-nic", "none"]
 

@@ -4,7 +4,7 @@
 > ("Estado atual", "Pendências" e uma linha no "Log") **no mesmo commit** da mudança. Veja `AGENTS.md`.
 > Se o estado aqui divergir do código, o código vale — corrija este arquivo.
 
-Última atualização: 2026-11-10 (Grok 4.6) — fix WHPX: -accel e -machine accel= juntos derrubavam o QEMU.
+Última atualização: 2026-11-10 (Grok 4.6) — perfil "Teste PXE (rede interna)" (TAP/bridge na LAN).
 
 ## Objetivo
 Gerenciador gráfico (WinForms) e scripts de máquinas virtuais QEMU, com perfis prontos para Windows, Linux, macOS e outras arquiteturas.
@@ -18,8 +18,8 @@ Gerenciador gráfico (WinForms) e scripts de máquinas virtuais QEMU, com perfis
 | Recursos avançados QEMU (C#) | ✅ | UEFI/pflash, 9p, kernel/initrd, boot, snapshot, RNG, balloon, TPM, hostfwd |
 | Validação de caminhos | ✅ | Disco/QEMU/ISO/firmware/kernel com mensagens em português |
 | Log da saída do QEMU | ✅ | Aba Log captura stdout/stderr e código de saída |
-| GUI Python (`qemu-manager-definitivo.py`) | ✅ | Referência Tkinter (paridade com o C#) |
-| Script Linux | ✅ | `programa/qemu-manager-linux.sh` v1.0 — menu completo, `--self-test` PASSOU no WSL |
+| GUI Python (`qemu-manager-definitivo.py`) | ✅ | Referência Tkinter (paridade com o C#); perfil PXE TAP |
+| Script Linux | ✅ | `programa/qemu-manager-linux.sh` v1.0 — menu completo, `--self-test` inclui PXE bridge/TAP |
 
 Legenda: ✅ pronto · 🔄 em andamento · ⏳ não iniciado · ⚠️ com problema.
 
@@ -38,12 +38,14 @@ Linux: `bash programa/qemu-manager-linux.sh` (python3 + qemu-system + qemu-img).
 - 2026-11-10 — C# WinForms é a versão atual no Windows; o Python permanece como referência.
 - 2026-11-10 — aceleração no Windows é WHPX (`-accel whpx`).
 - 2026-11-10 — `ProcessStartInfo.ArgumentList` para montar a linha do QEMU (aspas tratadas). Extra args respeitam aspas duplas.
+- 2026-11-10 — PXE da LAN usa `-netdev tap/bridge` + `-device e1000,...,bootindex=1`. NAT (`user`) não enxerga o servidor PXE interno.
 - 2026-11-10 — JSON é gravado em PascalCase; a leitura aceita também snake_case do Python.
 - 2026-11-10 — repositório GitHub: github.com/hawkinf/qemu-manager.
 
 ## Pendências / riscos conhecidos
 - TPM emulado depende de `swtpm` com socket `./swtpm-sock`.
 - Neste WSL não há `qemu-img`/`qemu-system-*` — o `--self-test` (montagem de args, JSON, dry-run) passou; iniciar uma VM de verdade pede os pacotes QEMU no host Linux.
+- PXE na LAN exige TAP em ponte com a placa física (Windows: `ncpa.cpl` → TAP + cabo). O código não cria a ponte sozinho. TAP `OpenVPN TAP-Windows6` neste host está Disconnected até a ponte existir.
 
 ## Como continuar (qualquer IA)
 1. Leia `AGENTS.md`, este arquivo e `docs/ARCHITECTURE.md`.
@@ -52,6 +54,7 @@ Linux: `bash programa/qemu-manager-linux.sh` (python3 + qemu-system + qemu-img).
 4. Atualize este arquivo e commite junto com a mudança.
 
 ## Log (mais recente primeiro; acrescente uma linha por tarefa)
+- 2026-11-10 — Grok 4.6 — Perfil **Teste PXE (rede interna)**: TAP/bridge (não NAT), NIC e1000, boot n, bootindex=1, DiskIf none. Extra ganhou TAP/bridge, MAC, TFTP, bootfile. ifname com espaço vai entre aspas (`ifname="OpenVPN TAP-Windows6"`). Linux: NetMode bridge / br0. Validar: Python/C# → perfil "Teste PXE (rede interna)"; Linux `bash programa/qemu-manager-linux.sh --self-test`.
 - 2026-11-10 — Grok 4.6 — QEMU recusava `-accel whpx` + `-machine q35,accel=whpx` e saía na hora; a GUI Python dizia “VM iniciada”. Agora só `-accel whpx -machine q35`. Se o QEMU morrer, mostra last-qemu.log. PXE usa bootindex=1. Validar: fechar o Python, abrir de novo, Iniciar — tem de abrir a janela do QEMU.
 - 2026-11-10 — Grok 4.6 — `programa/dist/` fora do git (exe 69 MB). Repo: https://github.com/hawkinf/qemu-manager
 - 2026-11-10 — Grok 4.6 — script Linux reescrito (paridade de args com o C#, KVM/TCG, presets, editar/excluir/snapshots, `--print-args`/`--self-test`). Self-test no WSL Ubuntu 22.04: PASSOU (exit 0). Publicar em github.com/hawkinf/qemu-manager. Validar: `bash programa/qemu-manager-linux.sh --self-test`.

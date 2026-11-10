@@ -29,6 +29,7 @@ Aplicativo Windows para criar, configurar e iniciar VMs QEMU. A GUI C# (WinForms
 - Binários: `C:\Program Files\qemu\qemu-system-*.exe` e `qemu-img.exe`.
 - Discos/ISOs: padrão `G:\vm\` (WorkDir).
 - QEMU extra: `-bios`, `-drive if=pflash`, virtio-9p, `-kernel`/`-initrd`/`-append`, `-loadvm`, virtio-rng/balloon, tpm-tis + swtpm, `-nic user,hostfwd=`.
+- Rede: `user` (NAT), `tap` (Windows TAP / Linux tap0), `bridge` (Linux br0), `none`. Perfil **Teste PXE (rede interna)** usa TAP/bridge + e1000 + `boot n` + `bootindex=1` (sem disco).
 
 ## Convenções
 - Layout WinForms com coordenadas absolutas e `AutoScroll` nas abas.
@@ -41,3 +42,6 @@ Aplicativo Windows para criar, configurar e iniciar VMs QEMU. A GUI C# (WinForms
 - Publish single-file: recursos precisam ser EmbeddedResource.
 - TPM (`swtpm-sock`) é Unix-socket; no Windows quase sempre precisa de outro backend.
 - WHPX só em guests x86/i386; ARM/RISC-V/PPC usam só `-machine`.
+- NAT (`-nic user`) não vê o PXE da LAN. PXE interno pede TAP em ponte com a placa física (`ncpa.cpl`) ou bridge Linux (`br0`).
+- ifname TAP com espaço precisa de aspas **dentro** da string do netdev: `ifname="OpenVPN TAP-Windows6"`.
+- Não passar `-accel` junto com `-machine ...,accel=` — o QEMU recusa e sai na hora.

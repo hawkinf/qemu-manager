@@ -177,6 +177,10 @@ append = str(get("Append", "append"))
 keyboard = str(get("Keyboard", default="en-us")) or "en-us"
 net_mode = str(get("NetMode", "net_mode", default="user")) or "user"
 hostfwd = str(get("HostFwd", "hostfwd"))
+tap_if = str(get("TapIf", "tap_if"))
+mac = str(get("Mac", "mac"))
+tftp = str(get("Tftp", "tftp"))
+bootfile = str(get("BootFile", "bootfile", "boot_file"))
 extra = str(get("Extra", "extra"))
 boot = str(get("Boot", default="menu")) or "menu"
 boot_custom = str(get("BootCustom", "boot_custom", default="ncd")) or "ncd"
@@ -239,13 +243,29 @@ if sound != "none":
         args += ["-device", "intel-hda", "-device", "hda-duplex"]
     else:
         args += ["-device", sound]
-if net_mode == "user" and nic != "none":
-    n = f"user,model={nic}"
+pxe = boot in ("n", "once_n", "nc") or (boot == "custom" and str(boot_custom).startswith("n"))
+nic_model = nic if nic and nic != "none" else "e1000"
+mac_opt = f",mac={mac}" if mac else ""
+bootidx = ",bootindex=1" if pxe else ""
+if nic == "none" or net_mode == "none":
+    args += ["-nic", "none"]
+elif net_mode == "user":
+    n = f"user,model={nic_model}{mac_opt}"
     if hostfwd:
         n += f",hostfwd={hostfwd}"
-    if boot in ("n", "once_n") or (boot == "custom" and str(boot_custom).startswith("n")):
+    if tftp:
+        n += f",tftp={tftp}"
+    if bootfile:
+        n += f",bootfile={bootfile}"
+    if pxe:
         n += ",bootindex=1"
     args += ["-nic", n]
+elif net_mode in ("tap", "bridge"):
+    ifname = tap_if or ("br0" if net_mode == "bridge" else "tap0")
+    if " " in ifname and not ifname.startswith('"'):
+        ifname = f'"{ifname}"'
+    nd = f"tap,id=net0,ifname={ifname}" if net_mode == "tap" else f"bridge,id=net0,br={ifname}"
+    args += ["-netdev", nd, "-device", f"{nic_model},netdev=net0{mac_opt}{bootidx}"]
 else:
     args += ["-nic", "none"]
 if iso:
@@ -475,7 +495,10 @@ PY
     return 0
   fi
 
-  ensure_disk "$DISK" "${SIZE:-40G}" || return 1
+  diskif="$(field "$file" DiskIf virtio)"
+  if [[ "$diskif" != "none" ]]; then
+    ensure_disk "$DISK" "${SIZE:-40G}" || return 1
+  fi
   warn_if_missing "ISO" "$ISO" 0 || true
   warn_if_missing "BIOS/OVMF" "$BIOS" 1 || return 1
   warn_if_missing "pflash" "$PFLASH" 1 || return 1
@@ -515,7 +538,8 @@ PRESET_JSON='{
   "Debian x64": {"Arch":"x86_64 (64-bit)","Disk":"debian.qcow2","Size":"30G","Ram":"2G","Cpus":"2","CpuModel":"host","Machine":"q35","DiskIf":"virtio","Nic":"virtio-net-pci","Vga":"virtio","Gl":true,"Usb":true,"Rng":true},
   "Alpine / Minimo": {"Arch":"x86_64 (64-bit)","Disk":"alpine.qcow2","Size":"10G","Ram":"1G","Cpus":"1","CpuModel":"host","Machine":"q35","DiskIf":"virtio","Nic":"virtio-net-pci","Vga":"virtio","Usb":true},
   "RISC-V 64": {"Arch":"riscv64","Disk":"riscv.qcow2","Size":"20G","Ram":"2G","Cpus":"2","CpuModel":"rv64","Machine":"virt","DiskIf":"virtio","Nic":"virtio-net-pci","Vga":"virtio","Usb":true},
-  "Ubuntu ARM64": {"Arch":"aarch64 (ARM 64-bit)","Disk":"ubuntu-arm.qcow2","Size":"40G","Ram":"4G","Cpus":"4","CpuModel":"cortex-a72","Machine":"virt","DiskIf":"virtio","Nic":"virtio-net-pci","Vga":"virtio","Usb":true,"Rng":true}
+  "Ubuntu ARM64": {"Arch":"aarch64 (ARM 64-bit)","Disk":"ubuntu-arm.qcow2","Size":"40G","Ram":"4G","Cpus":"4","CpuModel":"cortex-a72","Machine":"virt","DiskIf":"virtio","Nic":"virtio-net-pci","Vga":"virtio","Usb":true,"Rng":true},
+  "Teste PXE (rede interna)": {"Arch":"x86_64 (64-bit)","Disk":"pxe-test.qcow2","Size":"2G","Ram":"2G","Cpus":"2","CpuModel":"qemu64","Machine":"q35","DiskIf":"none","Nic":"e1000","Boot":"n","BootMenu":true,"Vga":"std","Usb":true,"Rng":false,"NetMode":"bridge","TapIf":"br0","Mac":"52:54:00:12:34:56"}
 }'
 
 create_vm() {
@@ -726,6 +750,47 @@ EOF
   "Extra": "-smbios type=2 -uuid 12345678-1234-1234-1234-123456789abc"
 }
 EOF
+  cat >"$dir/pxe.json" <<EOF
+{
+  "Arch": "x86_64 (64-bit)",
+  "Disk": "$dir/pxe.qcow2",
+  "Ram": "2G",
+  "Cpus": "2",
+  "CpuModel": "qemu64",
+  "Machine": "q35",
+  "DiskIf": "none",
+  "Nic": "e1000",
+  "Usb": true,
+  "Rng": false,
+  "Display": "gtk",
+  "Vga": "std",
+  "Boot": "n",
+  "BootMenu": true,
+  "NetMode": "bridge",
+  "TapIf": "br0",
+  "Mac": "52:54:00:12:34:56"
+}
+EOF
+  cat >"$dir/tap.json" <<EOF
+{
+  "Arch": "x86_64 (64-bit)",
+  "Disk": "$dir/tap.qcow2",
+  "Ram": "2G",
+  "Cpus": "2",
+  "CpuModel": "qemu64",
+  "Machine": "q35",
+  "DiskIf": "none",
+  "Nic": "e1000",
+  "Usb": true,
+  "Rng": false,
+  "Display": "gtk",
+  "Vga": "std",
+  "Boot": "n",
+  "NetMode": "tap",
+  "TapIf": "OpenVPN TAP-Windows6",
+  "Mac": "52:54:00:12:34:56"
+}
+EOF
 
   local fail=0
   assert_contains() {
@@ -764,6 +829,22 @@ EOF
   assert_contains "$out" "12345678-1234-1234-1234-123456789abc" "uuid preservado"
   assert_contains "$out" "order=ncd,menu=on" "boot custom"
   assert_contains "$out" "-nic" "nic none vira -nic none"
+
+  out="$(print_args_from_json "$dir/pxe.json")"
+  assert_contains "$out" "-netdev" "PXE LAN usa -netdev"
+  assert_contains "$out" "bridge,id=net0,br=br0" "PXE Linux bridge br0"
+  assert_contains "$out" "e1000,netdev=net0,mac=52:54:00:12:34:56,bootindex=1" "PXE e1000 bootindex"
+  assert_contains "$out" "order=n,menu=on" "PXE boot order=n"
+  if [[ "$out" == *"-drive"* ]]; then
+    echo "  FALHOU  PXE DiskIf none não deve passar -drive"
+    fail=1
+  else
+    echo "  OK  PXE DiskIf none sem -drive"
+  fi
+
+  out="$(print_args_from_json "$dir/tap.json")"
+  assert_contains "$out" 'ifname="OpenVPN TAP-Windows6"' "TAP com espaço vai entre aspas"
+  assert_contains "$out" "e1000,netdev=net0,mac=52:54:00:12:34:56,bootindex=1" "TAP e1000 bootindex"
 
   # pick_json não deve vazar a lista no stdout: simulamos via json_files
   mkdir -p "$dir/cfgs"
