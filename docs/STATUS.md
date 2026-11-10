@@ -52,6 +52,7 @@ Linux: `bash programa/qemu-manager-linux.sh` (python3 + qemu-system + qemu-img).
 4. Atualize este arquivo e commite junto com a mudança.
 
 ## Log (mais recente primeiro; acrescente uma linha por tarefa)
+- 2026-11-10 — Grok 4.6 — `programa/dist/` fora do git (exe 69 MB). Repo: https://github.com/hawkinf/qemu-manager
 - 2026-11-10 — Grok 4.6 — script Linux reescrito (paridade de args com o C#, KVM/TCG, presets, editar/excluir/snapshots, `--print-args`/`--self-test`). Self-test no WSL Ubuntu 22.04: PASSOU (exit 0). Publicar em github.com/hawkinf/qemu-manager. Validar: `bash programa/qemu-manager-linux.sh --self-test`.
 - 2026-11-10 — Grok 4.6 — paridade C# com o Python: salvar/carregar, UEFI/pflash, 9p, kernel/initrd/append, boot, snapshots (`qemu-img snapshot -l`), RNG/balloon/TPM, hostfwd, validação de caminhos, aba Log, perfis extras e `qemu-manager-linux.sh`. `dotnet publish` ok; exe abre com título QEMU Manager. Validar: Salvar uma VM, recarregar a lista, Iniciar (sem QEMU a mensagem deve ser amigável) e ver a aba Log.
 - 2026-11-10 — Grok 4.6 — ícones profissionais em `programa/Resources/` (app.ico 16–256 + 12 PNGs), embutidos no csproj, janela/abas/botões usam `AppIcons`; `dotnet publish` ok, exe em `programa/publish/QemuManager.exe` com ícone associado 32x32. Validar: abrir o exe e conferir ícone da janela, abas e botões Atualizar/Iniciar/Editar/Excluir.
