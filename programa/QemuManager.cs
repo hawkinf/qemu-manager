@@ -1116,14 +1116,11 @@ public partial class Form1 : Form
 
         var args = new List<string>();
         var isX86 = cfg.Arch.Contains("x86", StringComparison.OrdinalIgnoreCase) || cfg.Arch.Contains("i386", StringComparison.OrdinalIgnoreCase);
+        var machine = (cfg.Machine ?? "q35").Split(',')[0];
         if (isX86)
-        {
-            args.AddRange(new[] { "-accel", "whpx" });
-            var machine = cfg.Machine.Contains("accel=") ? cfg.Machine : $"{cfg.Machine},accel=whpx";
-            args.AddRange(new[] { "-machine", machine });
-        }
+            args.AddRange(new[] { "-accel", "whpx", "-machine", machine });
         else
-            args.AddRange(new[] { "-machine", cfg.Machine });
+            args.AddRange(new[] { "-machine", machine });
 
         args.AddRange(new[] { "-m", cfg.Ram, "-smp", cfg.Cpus, "-cpu", cfg.CpuModel });
         if (cfg.DiskIf != "none")
@@ -1152,6 +1149,8 @@ public partial class Form1 : Form
             var nic = $"user,model={cfg.Nic}";
             if (!string.IsNullOrWhiteSpace(cfg.HostFwd))
                 nic += $",hostfwd={cfg.HostFwd}";
+            if (cfg.Boot is "n" or "once_n" || (cfg.Boot == "custom" && cfg.BootCustom.StartsWith("n")))
+                nic += ",bootindex=1";
             args.AddRange(new[] { "-nic", nic });
         }
         else

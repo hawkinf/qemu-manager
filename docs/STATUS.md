@@ -4,7 +4,7 @@
 > ("Estado atual", "Pendências" e uma linha no "Log") **no mesmo commit** da mudança. Veja `AGENTS.md`.
 > Se o estado aqui divergir do código, o código vale — corrija este arquivo.
 
-Última atualização: 2026-11-10 (Grok 4.6) — script Linux 1.0 + GitHub.
+Última atualização: 2026-11-10 (Grok 4.6) — fix WHPX: -accel e -machine accel= juntos derrubavam o QEMU.
 
 ## Objetivo
 Gerenciador gráfico (WinForms) e scripts de máquinas virtuais QEMU, com perfis prontos para Windows, Linux, macOS e outras arquiteturas.
@@ -52,6 +52,7 @@ Linux: `bash programa/qemu-manager-linux.sh` (python3 + qemu-system + qemu-img).
 4. Atualize este arquivo e commite junto com a mudança.
 
 ## Log (mais recente primeiro; acrescente uma linha por tarefa)
+- 2026-11-10 — Grok 4.6 — QEMU recusava `-accel whpx` + `-machine q35,accel=whpx` e saía na hora; a GUI Python dizia “VM iniciada”. Agora só `-accel whpx -machine q35`. Se o QEMU morrer, mostra last-qemu.log. PXE usa bootindex=1. Validar: fechar o Python, abrir de novo, Iniciar — tem de abrir a janela do QEMU.
 - 2026-11-10 — Grok 4.6 — `programa/dist/` fora do git (exe 69 MB). Repo: https://github.com/hawkinf/qemu-manager
 - 2026-11-10 — Grok 4.6 — script Linux reescrito (paridade de args com o C#, KVM/TCG, presets, editar/excluir/snapshots, `--print-args`/`--self-test`). Self-test no WSL Ubuntu 22.04: PASSOU (exit 0). Publicar em github.com/hawkinf/qemu-manager. Validar: `bash programa/qemu-manager-linux.sh --self-test`.
 - 2026-11-10 — Grok 4.6 — paridade C# com o Python: salvar/carregar, UEFI/pflash, 9p, kernel/initrd/append, boot, snapshots (`qemu-img snapshot -l`), RNG/balloon/TPM, hostfwd, validação de caminhos, aba Log, perfis extras e `qemu-manager-linux.sh`. `dotnet publish` ok; exe abre com título QEMU Manager. Validar: Salvar uma VM, recarregar a lista, Iniciar (sem QEMU a mensagem deve ser amigável) e ver a aba Log.

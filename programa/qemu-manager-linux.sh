@@ -216,10 +216,10 @@ if cpu == "host" and accel != "kvm":
     cpu = "max" if "64" in arch or "x86_64" in arch.lower() else "qemu32"
 
 args = [qemu]
+machine = (machine or "q35").split(",")[0]
 if is_x86:
-    args += ["-accel", accel]
-    m = machine if "accel=" in machine else f"{machine},accel={accel}"
-    args += ["-machine", m]
+    # QEMU recente recusa -accel junto com -machine accel=
+    args += ["-accel", accel, "-machine", machine]
 else:
     args += ["-machine", machine]
 
@@ -243,6 +243,8 @@ if net_mode == "user" and nic != "none":
     n = f"user,model={nic}"
     if hostfwd:
         n += f",hostfwd={hostfwd}"
+    if boot in ("n", "once_n") or (boot == "custom" and str(boot_custom).startswith("n")):
+        n += ",bootindex=1"
     args += ["-nic", n]
 else:
     args += ["-nic", "none"]

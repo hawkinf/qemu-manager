@@ -7,6 +7,7 @@ QEMU Manager DEFINITIVO - Todas as opções + Tooltips completos
 import os
 import json
 import subprocess
+import time
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import tkinter.simpledialog
@@ -722,13 +723,12 @@ class QemuManager:
             return
 
         args = [qemu]
+        machine = (cfg["machine"] or "q35").split(",")[0]
         if "x86" in cfg["arch"] or "i386" in cfg["arch"]:
-            args += ["-accel", "whpx"]
-            m = cfg["machine"]
-            if ",accel=" not in m: m += ",accel=whpx"
-            args += ["-machine", m]
+            # QEMU recente recusa -accel junto com -machine accel=
+            args += ["-accel", "whpx", "-machine", machine]
         else:
-            args += ["-machine", cfg["machine"]]
+            args += ["-machine", machine]
 
         args += ["-m", cfg["ram"], "-smp", cfg["cpus"], "-cpu", cfg["cpu_model"]]
         args += ["-drive", f"file={disk},format=qcow2,if={cfg['disk_if']}"]
@@ -737,7 +737,7 @@ class QemuManager:
             args += ["-drive", f"file={cfg['extra_disk']},format=qcow2,if={cfg['extra_diskif']}"]
 
         if cfg["usb"]:
-            args += ["-device", "usb-tablet", "-device", "usb-kbd"]
+            args += ["-usb", "-device", "usb-tablet", "-device", "usb-kbd"]
 
         disp = cfg["display"]
         if cfg["gl"] and disp == "gtk":
@@ -753,9 +753,15 @@ class QemuManager:
             else:
                 args += ["-device", cfg["sound"]]
 
+        pxe = cfg["boot"] in ("n", "once_n") or (
+            cfg["boot"] == "custom" and str(cfg.get("boot_custom", "")).startswith("n")
+        )
         if cfg["net_mode"] == "user" and cfg["nic"] != "none":
             n = f"user,model={cfg['nic']}"
-            if cfg["hostfwd"]: n += f",hostfwd={cfg['hostfwd']}"
+            if cfg["hostfwd"]:
+                n += f",hostfwd={cfg['hostfwd']}"
+            if pxe:
+                n += ",bootindex=1"
             args += ["-nic", n]
         else:
             args += ["-nic", "none"]
@@ -799,10 +805,24 @@ class QemuManager:
         if cfg["extra"]:
             args += cfg["extra"].split()
 
+        os.makedirs(CONFIG_DIR, exist_ok=True)
+        log_path = os.path.join(CONFIG_DIR, "last-qemu.log")
         try:
-            subprocess.Popen(args)
+            with open(log_path, "w", encoding="utf-8") as log:
+                log.write("CMD: " + " ".join(args) + "\n\n")
+                log.flush()
+                proc = subprocess.Popen(args, stdout=log, stderr=subprocess.STDOUT)
+            time.sleep(0.8)
+            rc = proc.poll()
+            if rc is not None:
+                try:
+                    err = open(log_path, encoding="utf-8", errors="replace").read()
+                except OSError:
+                    err = f"QEMU saiu com código {rc}"
+                messagebox.showerror("QEMU encerrou na hora", err[-2500:])
+                self.status.config(text="QEMU falhou — veja last-qemu.log")
+                return
             self.status.config(text="VM iniciada")
-            messagebox.showinfo("OK", "Máquina virtual iniciada!")
         except Exception as e:
             messagebox.showerror("Erro", str(e))
 
