@@ -12,12 +12,14 @@ Gerenciador gráfico (WinForms) e scripts de máquinas virtuais QEMU, com perfis
 ## Estado atual
 | Módulo / área | Estado | Observações |
 |---|---|---|
-| GUI C# WinForms (`programa/QemuManager.cs`) | 🔄 | Abas VMs/Principal/Hardware/Extra, perfis, tooltips, iniciar VM |
-| Ícones / recursos | ✅ | `app.ico` no exe e na janela; PNGs 16/32 embutidos; botões e abas com ícone |
-| Salvar/carregar config (C#) | 🔄 | Lista/editar/excluir JSON existem; falta botão Salvar da tela atual |
-| Recursos avançados QEMU (C#) | ⏳ | UEFI/pflash, TPM, 9p, kernel, boot order, snapshots — só no Python |
-| GUI Python (`qemu-manager-definitivo.py`) | ✅ | Referência completa (Tkinter) |
-| Script Linux | ⏳ | Citado no handoff antigo; arquivo ainda não está neste repo |
+| GUI C# WinForms (`programa/QemuManager.cs`) | ✅ | Abas VMs/Principal/Hardware/Extra/Log; perfis; tooltips; iniciar VM |
+| Ícones / recursos | ✅ | `app.ico` no exe e na janela; PNGs 16/32 embutidos |
+| Salvar/carregar config (C#) | ✅ | Salvar, Carregar JSON, Abrir pasta; lê PascalCase e snake_case |
+| Recursos avançados QEMU (C#) | ✅ | UEFI/pflash, 9p, kernel/initrd, boot, snapshot, RNG, balloon, TPM, hostfwd |
+| Validação de caminhos | ✅ | Disco/QEMU/ISO/firmware/kernel com mensagens em português |
+| Log da saída do QEMU | ✅ | Aba Log captura stdout/stderr e código de saída |
+| GUI Python (`qemu-manager-definitivo.py`) | ✅ | Referência Tkinter (paridade com o C#) |
+| Script Linux | ✅ | `programa/qemu-manager-linux.sh` — listar/iniciar/criar |
 
 Legenda: ✅ pronto · 🔄 em andamento · ⏳ não iniciado · ⚠️ com problema.
 
@@ -25,24 +27,22 @@ Legenda: ✅ pronto · 🔄 em andamento · ⏳ não iniciado · ⚠️ com prob
 ```powershell
 cd G:\vm\programa
 .\compilar-qemu-manager.ps1
-# ou:
-dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o publish
 Start-Process .\publish\QemuManager.exe
 ```
 Requisitos: .NET SDK 8+, QEMU em `C:\Program Files\qemu\`, ISOs/discos em `G:\vm\` (VirtIO esperado em `G:\vm\virtio-win.iso`).
 Configs das VMs: `%USERPROFILE%\QEMU_Manager_Configs\*.json`.
+Linux: `bash programa/qemu-manager-linux.sh` (precisa de `qemu-system-*`, `qemu-img`, `python3`).
 
 ## Decisões de arquitetura (não reverter sem motivo)
 - 2026-11-10 — ícones vivem em `programa/Resources/` e entram como `EmbeddedResource` + `ApplicationIcon`; a UI não depende de `app.ico` ao lado do exe.
-- 2026-11-10 — C# WinForms é a versão “atual” para o usuário no Windows; o Python permanece como referência de funcionalidades a portar.
+- 2026-11-10 — C# WinForms é a versão atual no Windows; o Python permanece como referência.
 - 2026-11-10 — aceleração no Windows é WHPX (`-accel whpx`).
+- 2026-11-10 — `ProcessStartInfo.ArgumentList` para montar a linha do QEMU (aspas tratadas). Extra args respeitam aspas duplas.
+- 2026-11-10 — JSON é gravado em PascalCase; a leitura aceita também snake_case do Python.
 
 ## Pendências / riscos conhecidos
-- Salvar a configuração atual em JSON na versão C# (Python já faz) — responsável: qualquer IA
-- Portar UEFI/pflash, TPM, 9p share, kernel/initrd, boot order, snapshots do Python para o C#
-- Validação de caminhos (disco, ISO, qemu-system-*.exe) com mensagem amigável
-- Log da saída do QEMU na GUI
-- Trazer `qemu-manager-linux.sh` para este repositório se ainda for desejado
+- TPM emulado depende de `swtpm` com socket `./swtpm-sock` (igual ao Python); no Windows isso costuma falhar sem um swtpm extra.
+- O script Linux não foi executado neste ambiente Windows — validar num host Linux quando possível.
 
 ## Como continuar (qualquer IA)
 1. Leia `AGENTS.md`, este arquivo e `docs/ARCHITECTURE.md`.
@@ -51,5 +51,6 @@ Configs das VMs: `%USERPROFILE%\QEMU_Manager_Configs\*.json`.
 4. Atualize este arquivo e commite junto com a mudança.
 
 ## Log (mais recente primeiro; acrescente uma linha por tarefa)
+- 2026-11-10 — Grok 4.6 — paridade C# com o Python: salvar/carregar, UEFI/pflash, 9p, kernel/initrd/append, boot, snapshots (`qemu-img snapshot -l`), RNG/balloon/TPM, hostfwd, validação de caminhos, aba Log, perfis extras e `qemu-manager-linux.sh`. `dotnet publish` ok; exe abre com título QEMU Manager. Validar: Salvar uma VM, recarregar a lista, Iniciar (sem QEMU a mensagem deve ser amigável) e ver a aba Log.
 - 2026-11-10 — Grok 4.6 — ícones profissionais em `programa/Resources/` (app.ico 16–256 + 12 PNGs), embutidos no csproj, janela/abas/botões usam `AppIcons`; `dotnet publish` ok, exe em `programa/publish/QemuManager.exe` com ícone associado 32x32. Validar: abrir o exe e conferir ícone da janela, abas e botões Atualizar/Iniciar/Editar/Excluir.
 - 2026-11-10 — projeto criado com o padrão de handoff (Grok 4.6).

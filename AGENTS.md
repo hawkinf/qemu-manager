@@ -48,7 +48,7 @@ cd G:\vm\programa
 Requisitos: .NET SDK 8+, QEMU em `C:\Program Files\qemu\`.
 
 ## 6. Mapa rápido
-- `programa/` — código C# (`QemuManager.cs`, `AppIcons.cs`) e Python de referência
+- `programa/` — código C# (`QemuManager.cs`, `AppIcons.cs`), Python de referência e `qemu-manager-linux.sh`
 - `programa/Resources/` — ícones embutidos (app.ico + PNGs)
 - `docs/` — STATUS (continuidade) e ARCHITECTURE (mapa)
 

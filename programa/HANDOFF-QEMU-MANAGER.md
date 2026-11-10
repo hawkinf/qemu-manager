@@ -20,7 +20,7 @@ Gerenciador gráfico (e terminal) de máquinas virtuais QEMU, criado para substi
 | `qemu-manager-definitivo.py` | Versão Python + Tkinter (mais completa, com tooltips, todos os recursos) | `/workspace/artifacts/` |
 | `QemuManager.cs` | Versão C# WinForms (atual, com tooltips e ícone) | `/workspace/artifacts/` |
 | `compilar-qemu-manager.ps1` | Script PowerShell para compilar o C# | `/workspace/artifacts/` |
-| `qemu-manager-linux.sh` | Script de terminal para Linux (menus) | `/workspace/artifacts/` |
+| `qemu-manager-linux.sh` | Script de terminal para Linux (menus) | `programa/` |
 | `app.ico` | Ícone simples da janela | `/workspace/artifacts/` |
 
 ---
@@ -52,12 +52,12 @@ cd G:\vm
 - Argumentos extras livres
 
 ### Versão C# (`QemuManager.cs`) — atual
-- Abas: VMs, Principal, Hardware, Extra
-- Perfis principais
-- Tooltips
-- Ícone da janela (`app.ico`)
+- Abas: VMs, Principal, Hardware, Extra, Log
+- Perfis (Windows 11/10/7/XP/98, Ubuntu x64/ARM, Debian, RISC-V, Alpine, macOS)
+- Tooltips e ícones embutidos
+- Salvar/carregar JSON, boot, UEFI/pflash, 9p, kernel, snapshots, RNG/balloon/TPM, hostfwd
+- Validação de caminhos e log do QEMU
 - Caminhos padrão em `G:\vm\`
-- Layout com posicionamento absoluto
 
 ### Linux (`qemu-manager-linux.sh`)
 - Menu interativo no terminal
@@ -80,13 +80,8 @@ Campos principais:
 
 ## Pendências / Melhorias possíveis
 
-1. **Ícones melhores** — o `app.ico` atual é básico
-2. **Salvar/carregar** na versão C# ainda incompleto (Python tem)
-3. **UEFI/pflash, TPM, 9p, kernel** — presentes no Python, ausentes no C#
-4. **Boot order** completo no C#
-5. **Validação** de caminhos e arquivos
-6. **Log** de saída do QEMU
-7. **Snapshots** e gerenciamento avançado
+1. TPM no Windows exige `swtpm` (socket Unix); tratar backend nativo se alguém precisar
+2. Validar `qemu-manager-linux.sh` num host Linux
 
 ---
 
