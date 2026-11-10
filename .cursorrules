@@ -1,0 +1,5 @@
+Projeto QEMU Manager.
+Siga as regras de AGENTS.md (raiz do repositório) — valem para qualquer IA.
+Antes de trabalhar: leia AGENTS.md, docs/STATUS.md e docs/ARCHITECTURE.md; resuma ao usuário o que entendeu.
+Depois de qualquer mudança: atualize docs/STATUS.md (estado atual, pendências e uma linha no Log) no mesmo commit.
+Nunca commitar segredos nem dados reais de usuário.

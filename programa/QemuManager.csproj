@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+    <AssemblyTitle>QEMU Manager</AssemblyTitle>
+    <Product>QEMU Manager</Product>
+    <Description>Gerenciador gráfico de máquinas virtuais QEMU</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.png" Exclude="Resources\_preview.png" />
+    <EmbeddedResource Include="Resources\app.ico" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+#!/bin/sh
+# Hook de pré-commit do padrão de handoff: bloqueia commit de código sem atualização de docs/STATUS.md.
+# Ative uma vez por clone:  git config core.hooksPath .githooks
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -File scripts/check-handoff.ps1 || exit 1
+elif command -v powershell >/dev/null 2>&1; then
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-handoff.ps1 || exit 1
+else
+  echo "[handoff] aviso: PowerShell não encontrado; verificação de handoff pulada (o CI ainda verifica)."
+fi
+exit 0

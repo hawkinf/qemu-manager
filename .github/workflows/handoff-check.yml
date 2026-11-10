@@ -1,0 +1,26 @@
+name: handoff-check
+
+# Garante o padrão de handoff entre IAs: mudança de código exige atualização de docs/STATUS.md.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verificar docs/STATUS.md
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'pull_request') {
+            $range = '${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}'
+          } else {
+            $before = '${{ github.event.before }}'
+            if (-not $before -or $before -match '^0+$') { $before = 'HEAD~1' }
+            $range = "$before...HEAD"
+          }
+          pwsh scripts/check-handoff.ps1 -Range $range
