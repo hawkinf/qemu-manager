@@ -4,7 +4,7 @@
 > ("Estado atual", "Pendências" e uma linha no "Log") **no mesmo commit** da mudança. Veja `AGENTS.md`.
 > Se o estado aqui divergir do código, o código vale — corrija este arquivo.
 
-Última atualização: 2026-11-10 (Grok 4.6) — perfil "Teste PXE (rede interna)" (TAP/bridge na LAN).
+Última atualização: 2026-11-10 (Grok 4.6) — entrega: handoff/paths, exe em G:\vm, GitHub.
 
 ## Objetivo
 Gerenciador gráfico (WinForms) e scripts de máquinas virtuais QEMU, com perfis prontos para Windows, Linux, macOS e outras arquiteturas.
@@ -25,9 +25,10 @@ Legenda: ✅ pronto · 🔄 em andamento · ⏳ não iniciado · ⚠️ com prob
 
 ## Como rodar / validar
 ```powershell
-cd G:\vm\programa
+python G:\vm\qemu-manager-definitivo.py
+Start-Process G:\vm\QemuManager.exe
+cd G:\vm\programa\programa
 .\compilar-qemu-manager.ps1
-Start-Process .\publish\QemuManager.exe
 ```
 Requisitos: .NET SDK 8+, QEMU em `C:\Program Files\qemu\`, ISOs/discos em `G:\vm\` (VirtIO esperado em `G:\vm\virtio-win.iso`).
 Configs das VMs: `%USERPROFILE%\QEMU_Manager_Configs\*.json`.
@@ -43,9 +44,11 @@ Linux: `bash programa/qemu-manager-linux.sh` (python3 + qemu-system + qemu-img).
 - 2026-11-10 — repositório GitHub: github.com/hawkinf/qemu-manager.
 
 ## Pendências / riscos conhecidos
+- Escopo de código pedido está entregue (GUI C#/Python, Linux, ícones, PXE LAN, GitHub).
 - TPM emulado depende de `swtpm` com socket `./swtpm-sock`.
-- Neste WSL não há `qemu-img`/`qemu-system-*` — o `--self-test` (montagem de args, JSON, dry-run) passou; iniciar uma VM de verdade pede os pacotes QEMU no host Linux.
-- PXE na LAN exige TAP em ponte com a placa física (Windows: `ncpa.cpl` → TAP + cabo). O código não cria a ponte sozinho. TAP `OpenVPN TAP-Windows6` neste host está Disconnected até a ponte existir.
+- Neste WSL não há `qemu-img`/`qemu-system-*` — o `--self-test` passou; VM real no Linux pede os pacotes QEMU.
+- PXE na LAN: em `ncpa.cpl`, ponte TAP `OpenVPN TAP-Windows6` + placa **cabo**. O TAP está Disconnected até existir a ponte.
+- `G:\vm\virtio-win.iso` ainda não está neste PC.
 
 ## Como continuar (qualquer IA)
 1. Leia `AGENTS.md`, este arquivo e `docs/ARCHITECTURE.md`.
@@ -54,6 +57,7 @@ Linux: `bash programa/qemu-manager-linux.sh` (python3 + qemu-system + qemu-img).
 4. Atualize este arquivo e commite junto com a mudança.
 
 ## Log (mais recente primeiro; acrescente uma linha por tarefa)
+- 2026-11-10 — Grok 4.6 — Entrega: HANDOFF/AGENTS com paths reais; gitignore das cópias na raiz do clone; exe e Python em `G:\vm\`; push GitHub. Validar: `python G:\vm\qemu-manager-definitivo.py` e https://github.com/hawkinf/qemu-manager
 - 2026-11-10 — Grok 4.6 — Perfil **Teste PXE (rede interna)**: TAP/bridge (não NAT), NIC e1000, boot n, bootindex=1, DiskIf none. Extra ganhou TAP/bridge, MAC, TFTP, bootfile. ifname com espaço vai entre aspas (`ifname="OpenVPN TAP-Windows6"`). Linux: NetMode bridge / br0. Validar: Python/C# → perfil "Teste PXE (rede interna)"; Linux `bash programa/qemu-manager-linux.sh --self-test`.
 - 2026-11-10 — Grok 4.6 — QEMU recusava `-accel whpx` + `-machine q35,accel=whpx` e saía na hora; a GUI Python dizia “VM iniciada”. Agora só `-accel whpx -machine q35`. Se o QEMU morrer, mostra last-qemu.log. PXE usa bootindex=1. Validar: fechar o Python, abrir de novo, Iniciar — tem de abrir a janela do QEMU.
 - 2026-11-10 — Grok 4.6 — `programa/dist/` fora do git (exe 69 MB). Repo: https://github.com/hawkinf/qemu-manager

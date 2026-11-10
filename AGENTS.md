@@ -40,10 +40,14 @@ O usuário pode abrir o projeto em qualquer IA a qualquer momento. Para isso fun
 comandos de build/teste/execução documentados abaixo, e nada essencial só na sua cabeça.
 
 ## 5. Comandos do projeto (mantenha atualizado)
+Clone git: `G:\vm\programa`. Código C#/Python/Linux: `programa/`. Discos/ISOs do usuário: `G:\vm\`.
+
 ```powershell
-cd G:\vm\programa
+cd G:\vm\programa\programa
 .\compilar-qemu-manager.ps1
-# exe: programa/publish/QemuManager.exe
+# exe: G:\vm\programa\programa\publish\QemuManager.exe
+# cópia de uso: G:\vm\QemuManager.exe
+python G:\vm\qemu-manager-definitivo.py
 ```
 Requisitos: .NET SDK 8+, QEMU em `C:\Program Files\qemu\`.
 

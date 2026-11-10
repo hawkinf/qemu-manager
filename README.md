@@ -12,6 +12,13 @@ cd programa
 Start-Process .\publish\QemuManager.exe
 ```
 
+No PC do autor, atalhos prontos:
+
+```powershell
+python G:\vm\qemu-manager-definitivo.py
+Start-Process G:\vm\QemuManager.exe
+```
+
 Configs: `%USERPROFILE%\QEMU_Manager_Configs\`
 Discos/ISOs: `G:\vm\` (VirtIO: `G:\vm\virtio-win.iso`)
 

@@ -2,8 +2,12 @@
 
 **Data:** 2026-11-10  
 **Usuário:** Aguinaldo Baptistini  
-**Diretório de trabalho do usuário:** `G:\vm\`  
-**Idioma:** Português do Brasil
+**Clone git:** `G:\vm\programa`  
+**Trabalho (discos/ISOs/atalhos):** `G:\vm\`  
+**Idioma:** Português do Brasil  
+**GitHub:** https://github.com/hawkinf/qemu-manager  
+
+O estado vivo é `docs/STATUS.md`. Este arquivo só resume caminhos e como rodar.
 
 ---
 
@@ -15,104 +19,74 @@ Gerenciador gráfico (e terminal) de máquinas virtuais QEMU, criado para substi
 
 ## Arquivos principais
 
-| Arquivo | Descrição | Local |
-|---------|-----------|-------|
-| `qemu-manager-definitivo.py` | Versão Python + Tkinter (mais completa, com tooltips, todos os recursos) | `/workspace/artifacts/` |
-| `QemuManager.cs` | Versão C# WinForms (atual, com tooltips e ícone) | `/workspace/artifacts/` |
-| `compilar-qemu-manager.ps1` | Script PowerShell para compilar o C# | `/workspace/artifacts/` |
-| `qemu-manager-linux.sh` | Script de terminal para Linux (menus) | `programa/` |
-| `app.ico` | Ícone simples da janela | `/workspace/artifacts/` |
+| Arquivo | Descrição | Local versionado |
+|---|---|---|
+| `qemu-manager-definitivo.py` | GUI Python + Tkinter (referência) | `programa/` |
+| `QemuManager.cs` | GUI C# WinForms (produto Windows) | `programa/` |
+| `compilar-qemu-manager.ps1` | Publish single-file | `programa/` |
+| `qemu-manager-linux.sh` | Menu de terminal Linux | `programa/` |
+| `Resources/app.ico` | Ícone da janela/exe | `programa/Resources/` |
+
+Atalhos no diretório de trabalho do usuário:
+
+- `G:\vm\qemu-manager-definitivo.py`
+- `G:\vm\QemuManager.exe`
+- `G:\vm\qemu-manager-linux.sh`
 
 ---
 
 ## Como compilar (Windows)
 
 ```powershell
-cd G:\vm
-# Substitua o QemuManager.cs pelo mais recente
+cd G:\vm\programa\programa
 .\compilar-qemu-manager.ps1
-# Executável gerado em: G:\vm\publish\QemuManager.exe
+# exe: G:\vm\programa\programa\publish\QemuManager.exe
 ```
 
-**Requisitos:** .NET SDK 6+ ou 8+  
-**QEMU:** Deve estar instalado em `C:\Program Files\qemu\`
+**Requisitos:** .NET SDK 8+, QEMU em `C:\Program Files\qemu\`
+
+Rodar sem compilar:
+
+```powershell
+python G:\vm\qemu-manager-definitivo.py
+Start-Process G:\vm\QemuManager.exe
+```
 
 ---
 
-## Recursos já implementados
+## Recursos
 
-### Versão Python (`qemu-manager-definitivo.py`)
-- Abas: VMs, Principal, Hardware, Extra
-- Perfis prontos: Windows 11/10/7/XP, Ubuntu, Debian, Alpine, RISC-V, macOS (OpenCore), Windows 98
-- Tooltips em todos os controles
-- Salvar/carregar configurações em JSON
-- Lista de VMs salvas
-- Boot order completo (incluindo PXE/LAN)
-- UEFI/pflash, TPM, 9p share, kernel/initrd, snapshots, RNG, Balloon, VGA, som, etc.
-- Argumentos extras livres
-
-### Versão C# (`QemuManager.cs`) — atual
-- Abas: VMs, Principal, Hardware, Extra, Log
-- Perfis (Windows 11/10/7/XP/98, Ubuntu x64/ARM, Debian, RISC-V, Alpine, macOS)
-- Tooltips e ícones embutidos
-- Salvar/carregar JSON, boot, UEFI/pflash, 9p, kernel, snapshots, RNG/balloon/TPM, hostfwd
-- Validação de caminhos e log do QEMU
-- Caminhos padrão em `G:\vm\`
-
-### Linux (`qemu-manager-linux.sh`)
-- Menu interativo no terminal
-- Listar, iniciar, criar VMs
-- Perfis rápidos
+- Abas: VMs, Principal, Hardware, Extra, Log (C#)
+- Perfis: Windows 11/10/7/XP/98, Ubuntu x64/ARM, Debian, Alpine, RISC-V, macOS (OpenCore), **Teste PXE (rede interna)**
+- Salvar/carregar JSON (`%USERPROFILE%\QEMU_Manager_Configs\`)
+- UEFI/pflash, 9p, kernel/initrd, snapshots, RNG, balloon, TPM, hostfwd
+- Rede: user (NAT), tap, bridge, none
+- PXE LAN: TAP/bridge + e1000 + boot `n` + bootindex=1
+- Linux: `--self-test`, `--print-args`, `--check`
 
 ---
 
-## Estrutura de configuração (JSON)
+## Pendências de host (não são código)
 
-As VMs salvas ficam em: `%USERPROFILE%\QEMU_Manager_Configs\`
-
-Campos principais:
-- `Arch`, `Disk`, `Size`, `Iso`, `Virtio`
-- `Ram`, `Cpus`, `CpuModel`, `Machine`
-- `DiskIf`, `Nic`, `Vga`, `Display`, `Sound`
-- `Gl`, `Usb`, `Extra`
+1. TPM no Windows exige `swtpm` (socket Unix).
+2. PXE interno: em `ncpa.cpl`, ponte do TAP `OpenVPN TAP-Windows6` com a placa **cabo**.
+3. VirtIO ISO esperado em `G:\vm\virtio-win.iso` (ainda não está neste PC).
+4. No WSL, `qemu-img`/`qemu-system-*` podem faltar; o `--self-test` não precisa deles.
 
 ---
 
-## Pendências / Melhorias possíveis
+## Observações
 
-1. TPM no Windows exige `swtpm` (socket Unix); tratar backend nativo se alguém precisar
-
----
-
-## Observações importantes
-
-- Usuário exige respostas em **português do Brasil**
-- Diretório de trabalho fixo: `G:\vm\`
-- VirtIO ISO esperado em: `G:\vm\virtio-win.iso`
-- QEMU deve estar em `C:\Program Files\qemu\`
-- Aceleração no Windows: WHPX (`-accel whpx`)
-
----
-
-## Histórico resumido
-
-1. Começou com scripts PowerShell
-2. Evoluiu para GUI Python (Tkinter) com muitos recursos
-3. Convertido para C# WinForms
-4. Vários ajustes de layout e tooltips
-5. Usuário quer arquivos prontos em `G:\vm\`
+- Aceleração Windows: só `-accel whpx` (não juntar com `-machine accel=`).
+- NAT (`user`) não vê o servidor PXE da LAN.
+- ifname TAP com espaço: `ifname="OpenVPN TAP-Windows6"`.
+- JSON PascalCase na gravação; leitura também aceita snake_case.
 
 ---
 
 ## Como continuar
 
-Estado vivo do projeto: `docs/STATUS.md` (leia antes de `AGENTS.md` e `docs/ARCHITECTURE.md`).
-
-Qualquer agente pode:
-1. Ler `AGENTS.md` + `docs/STATUS.md`
-2. Abrir `QemuManager.cs` ou `qemu-manager-definitivo.py`
-3. Adicionar funcionalidades faltantes
-4. Gerar o `.exe` com `programa/compilar-qemu-manager.ps1`
-
-**Última versão estável:** `QemuManager.cs` (tooltips + ícones embutidos)  
-**Versão mais completa:** `qemu-manager-definitivo.py`
+1. `AGENTS.md`
+2. `docs/STATUS.md`
+3. `docs/ARCHITECTURE.md`
+4. `git log --oneline -15`

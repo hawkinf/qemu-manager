@@ -3,7 +3,21 @@
 **/obj/
 programa/publish/
 programa/dist/
+/dist/
+/publish/
 *.user
 *.suo
 *.pdb
 *.DS_Store
+
+# Cópias soltas na raiz do clone. O código versionado vive em programa/.
+/AppIcons.cs
+/HANDOFF-QEMU-MANAGER.md
+/QemuManager.cs
+/QemuManager.csproj
+/Resources/
+/app.ico
+/compilar-qemu-manager.ps1
+/qemu-manager-definitivo.py
+/qemu-manager-linux.sh
+/run.ps1

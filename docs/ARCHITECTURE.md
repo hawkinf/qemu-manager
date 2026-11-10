@@ -7,6 +7,7 @@ no mesmo commit.
 Aplicativo Windows para criar, configurar e iniciar VMs QEMU. A GUI C# (WinForms, .NET 8) é o produto atual. O Python Tkinter e o script Linux cobrem os mesmos conceitos fora do Windows.
 
 ## Estrutura de pastas
+Clone git: `G:\vm\programa`. Trabalho do usuário (discos/atalhos): `G:\vm\`. Cópias soltas na raiz do clone são ignoradas pelo git.
 - `programa/QemuManager.cs` — `Config`, `Form1`, `Program` (um arquivo)
 - `programa/AppIcons.cs` — carrega ícones de recursos embutidos
 - `programa/QemuManager.csproj` — WinExe net8.0-windows, `ApplicationIcon` + EmbeddedResource
